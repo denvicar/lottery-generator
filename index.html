@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grid Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+    .grid {
+      display: inline-grid;
+      grid-template-columns: repeat(4, 50px);
+      gap: 5px;
+      margin: 20px;
+    }
+    .cell {
+      width: 50px;
+      height: 50px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 1px solid #ccc;
+      background-color: #f9f9f9;
+      font-weight: bold;
+    }
+    .controls {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Grid Generator</h1>
+  <div class="controls">
+    <label for="gridCount">Number of grids (1-5):</label>
+    <input type="number" id="gridCount" min="1" max="5" value="1">
+    <button onclick="generateGrids()">Generate Grids</button>
+  </div>
+  <div id="gridsContainer"></div>
+
+  <script>
+    function generateGrids() {
+      const gridCount = parseInt(document.getElementById('gridCount').value);
+      if (isNaN(gridCount) || gridCount < 1 || gridCount > 5) {
+        alert('Please enter a number between 1 and 5.');
+        return;
+      }
+
+      const totalNumbersNeeded = gridCount * 16;
+      if (totalNumbersNeeded > 122) {
+        alert('Cannot generate grids without overlapping numbers.');
+        return;
+      }
+
+      // Generate unique random numbers
+      const allNumbers = Array.from({ length: 122 }, (_, i) => i + 1);
+      allNumbers.sort(() => Math.random() - 0.5); // Shuffle
+      const selectedNumbers = allNumbers.slice(0, totalNumbersNeeded);
+
+      const gridsContainer = document.getElementById('gridsContainer');
+      gridsContainer.innerHTML = ''; // Clear previous grids
+
+      for (let g = 0; g < gridCount; g++) {
+        const gridNumbers = selectedNumbers.slice(g * 16, (g + 1) * 16);
+        const grid = document.createElement('div');
+        grid.className = 'grid';
+
+        gridNumbers.forEach(num => {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.textContent = num;
+          grid.appendChild(cell);
+        });
+
+        gridsContainer.appendChild(grid);
+      }
+    }
+  </script>
+</body>
+</html>

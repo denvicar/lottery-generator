@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,12 +11,14 @@
       text-align: center;
       margin: 20px;
     }
+
     .grid {
       display: inline-grid;
       grid-template-columns: repeat(4, 150px);
       gap: 5px;
       margin: 20px;
     }
+
     .cell {
       width: 150px;
       height: 100px;
@@ -29,9 +32,11 @@
       padding: 5px;
       overflow: hidden;
     }
+
     .controls {
       margin-bottom: 20px;
     }
+
     #bbcodeOutput {
       margin-top: 20px;
       white-space: pre-wrap;
@@ -42,6 +47,7 @@
     }
   </style>
 </head>
+
 <body>
   <h1>Grid Generator</h1>
   <div class="controls">
@@ -56,7 +62,7 @@
   <canvas id="gridCanvas" width="800" height="600" style="display: none;"></canvas>
 
   <script>
-   const challenges = {
+    const challenges = {
       1: "Read a Manhua or a Manhwa",
       2: "Read a one-shot",
       3: "Read a doujinshi based on a series you've read",
@@ -219,7 +225,7 @@
       160: "Read a manga with a weapon on the cover",
       161: "Read a manga with an element in the title",
       162: "Read a manga with blood on the cover"
-};
+    };
 
 
     function generateGrids() {
@@ -261,9 +267,9 @@
     }
 
     function displayGridsAsImages() {
+  const grids = document.querySelectorAll('.grid');
   const canvas = document.getElementById('gridCanvas');
   const ctx = canvas.getContext('2d');
-  const grids = document.querySelectorAll('.grid');
 
   if (grids.length === 0) {
     alert('No grids to display. Please generate grids first.');
@@ -276,37 +282,67 @@
   const rowsPerGrid = 4;
   const colsPerGrid = 4;
 
-  canvas.width = colsPerGrid * (gridSize + gap) * grids.length;
-  canvas.height = rowsPerGrid * (cellHeight + gap);
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   grids.forEach((grid, gridIndex) => {
+    // Set canvas dimensions for a single grid
+    canvas.width = colsPerGrid * (gridSize + gap) - gap;
+    canvas.height = rowsPerGrid * (cellHeight + gap) - gap;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
     const cells = grid.querySelectorAll('.cell');
     cells.forEach((cell, cellIndex) => {
-      const x = gridIndex * (colsPerGrid * (gridSize + gap)) + (cellIndex % colsPerGrid) * (gridSize + gap);
+      const x = (cellIndex % colsPerGrid) * (gridSize + gap);
       const y = Math.floor(cellIndex / colsPerGrid) * (cellHeight + gap);
 
+      // Draw cell background
       ctx.fillStyle = '#f9f9f9';
       ctx.fillRect(x, y, gridSize, cellHeight);
 
+      // Draw cell border
       ctx.strokeStyle = '#ccc';
       ctx.strokeRect(x, y, gridSize, cellHeight);
 
+      // Draw wrapped text
       ctx.fillStyle = '#000';
-      ctx.font = 'bold 14px Arial';
+      ctx.font = '14px Arial';
       ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(cell.textContent, x + gridSize / 2, y + cellHeight / 2);
+      ctx.textBaseline = 'top';
+      const words = cell.textContent.split(' ');
+      let line = '';
+      const lines = [];
+      const maxWidth = gridSize - 10; // Padding inside the cell
+      const lineHeight = 18; // Line height for text
+
+      words.forEach(word => {
+        const testLine = line + word + ' ';
+        const testWidth = ctx.measureText(testLine).width;
+        if (testWidth > maxWidth) {
+          lines.push(line);
+          line = word + ' ';
+        } else {
+          line = testLine;
+        }
+      });
+      lines.push(line);
+
+      const textX = x + gridSize / 2;
+      let textY = y + 10; // Start drawing text slightly below the top of the cell
+
+      lines.forEach(line => {
+        ctx.fillText(line.trim(), textX, textY);
+        textY += lineHeight;
+      });
     });
+
+    // Convert canvas to an image
+    const img = new Image();
+    img.src = canvas.toDataURL();
+    img.style.marginTop = '20px';
+
+    // Append the image to the webpage
+    document.body.appendChild(img);
   });
-
-  const img = new Image();
-  img.src = canvas.toDataURL();
-  img.style.marginTop = '20px';
-  document.body.appendChild(img);
 }
-
 
     function downloadGridsAsImage() {
       const canvas = document.getElementById('gridCanvas');
@@ -366,7 +402,6 @@
       }
 
       let bbcode = '';
-      const today = new Date().toISOString().split('T')[0];
 
       grids.forEach((grid, gridIndex) => {
         bbcode += `[b]Grid ${gridIndex + 1}[/b]\n`;
@@ -374,7 +409,7 @@
         cells.forEach((cell, cellIndex) => {
           const challengeNumber = (gridIndex * 16) + cellIndex + 1;
           const description = cell.textContent;
-          bbcode += `[*][color=DIMGRAY][Started: ${today}] [Finished: ${today}][/color] #${String(challengeNumber).padStart(2, '0')}. ${description}\n`;
+          bbcode += `[*][color=DIMGRAY][Started: DATE] [Finished: DATE][/color] #${String(challengeNumber).padStart(2, '0')}. ${description}\n[url=http://myanimelist.net/manga/ID_NUM]MANGA_TITLE[/url]\n`;
         });
         bbcode += '\n';
       });
@@ -383,4 +418,5 @@
     }
   </script>
 </body>
+
 </html>

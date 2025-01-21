@@ -32,10 +32,13 @@
     .controls {
       margin-bottom: 20px;
     }
-    canvas {
-      display: block;
-      margin: 20px auto;
+    #bbcodeOutput {
+      margin-top: 20px;
+      white-space: pre-wrap;
+      text-align: left;
       border: 1px solid #ccc;
+      padding: 10px;
+      background: #f9f9f9;
     }
   </style>
 </head>
@@ -45,13 +48,15 @@
     <label for="gridCount">Number of grids (1-5):</label>
     <input type="number" id="gridCount" min="1" max="5" value="1">
     <button onclick="generateGrids()">Generate Grids</button>
-    <button onclick="downloadGridsAsImage()">Download as Image</button>
+    <button onclick="displayGridsAsImages()">Download as Image</button>
+    <button onclick="generateBBCode()">Generate BBCode</button>
   </div>
   <div id="gridsContainer"></div>
+  <div id="bbcodeOutput" style="display: none;"></div>
   <canvas id="gridCanvas" width="800" height="600" style="display: none;"></canvas>
 
   <script>
-    const challenges = {
+   const challenges = {
       1: "Read a Manhua or a Manhwa",
       2: "Read a one-shot",
       3: "Read a doujinshi based on a series you've read",
@@ -255,6 +260,54 @@
       }
     }
 
+    function displayGridsAsImages() {
+  const canvas = document.getElementById('gridCanvas');
+  const ctx = canvas.getContext('2d');
+  const grids = document.querySelectorAll('.grid');
+
+  if (grids.length === 0) {
+    alert('No grids to display. Please generate grids first.');
+    return;
+  }
+
+  const gridSize = 150;
+  const cellHeight = 100;
+  const gap = 5;
+  const rowsPerGrid = 4;
+  const colsPerGrid = 4;
+
+  canvas.width = colsPerGrid * (gridSize + gap) * grids.length;
+  canvas.height = rowsPerGrid * (cellHeight + gap);
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  grids.forEach((grid, gridIndex) => {
+    const cells = grid.querySelectorAll('.cell');
+    cells.forEach((cell, cellIndex) => {
+      const x = gridIndex * (colsPerGrid * (gridSize + gap)) + (cellIndex % colsPerGrid) * (gridSize + gap);
+      const y = Math.floor(cellIndex / colsPerGrid) * (cellHeight + gap);
+
+      ctx.fillStyle = '#f9f9f9';
+      ctx.fillRect(x, y, gridSize, cellHeight);
+
+      ctx.strokeStyle = '#ccc';
+      ctx.strokeRect(x, y, gridSize, cellHeight);
+
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(cell.textContent, x + gridSize / 2, y + cellHeight / 2);
+    });
+  });
+
+  const img = new Image();
+  img.src = canvas.toDataURL();
+  img.style.marginTop = '20px';
+  document.body.appendChild(img);
+}
+
+
     function downloadGridsAsImage() {
       const canvas = document.getElementById('gridCanvas');
       const ctx = canvas.getContext('2d');
@@ -300,6 +353,33 @@
       link.download = 'grids.png';
       link.href = canvas.toDataURL();
       link.click();
+    }
+
+    function generateBBCode() {
+      const grids = document.querySelectorAll('.grid');
+      const output = document.getElementById('bbcodeOutput');
+      output.style.display = 'block';
+
+      if (grids.length === 0) {
+        output.textContent = 'No grids to generate BBCode. Please generate grids first.';
+        return;
+      }
+
+      let bbcode = '';
+      const today = new Date().toISOString().split('T')[0];
+
+      grids.forEach((grid, gridIndex) => {
+        bbcode += `[b]Grid ${gridIndex + 1}[/b]\n`;
+        const cells = grid.querySelectorAll('.cell');
+        cells.forEach((cell, cellIndex) => {
+          const challengeNumber = (gridIndex * 16) + cellIndex + 1;
+          const description = cell.textContent;
+          bbcode += `[*][color=DIMGRAY][Started: ${today}] [Finished: ${today}][/color] #${String(challengeNumber).padStart(2, '0')}. ${description}\n`;
+        });
+        bbcode += '\n';
+      });
+
+      output.textContent = bbcode;
     }
   </script>
 </body>

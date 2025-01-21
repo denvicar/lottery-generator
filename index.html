@@ -12,22 +12,30 @@
     }
     .grid {
       display: inline-grid;
-      grid-template-columns: repeat(4, 50px);
+      grid-template-columns: repeat(4, 150px);
       gap: 5px;
       margin: 20px;
     }
     .cell {
-      width: 50px;
-      height: 50px;
+      width: 150px;
+      height: 100px;
       display: flex;
       justify-content: center;
       align-items: center;
       border: 1px solid #ccc;
       background-color: #f9f9f9;
       font-weight: bold;
+      text-align: center;
+      padding: 5px;
+      overflow: hidden;
     }
     .controls {
       margin-bottom: 20px;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      border: 1px solid #ccc;
     }
   </style>
 </head>
@@ -37,10 +45,178 @@
     <label for="gridCount">Number of grids (1-5):</label>
     <input type="number" id="gridCount" min="1" max="5" value="1">
     <button onclick="generateGrids()">Generate Grids</button>
+    <button onclick="downloadGridsAsImage()">Download as Image</button>
   </div>
   <div id="gridsContainer"></div>
+  <canvas id="gridCanvas" width="800" height="600" style="display: none;"></canvas>
 
   <script>
+    const challenges = {
+      1: "Read a Manhua or a Manhwa",
+      2: "Read a one-shot",
+      3: "Read a doujinshi based on a series you've read",
+      4: "Read a web/4-koma manga",
+      5: "Read a collection of short stories",
+      6: "Read a colored manga",
+      7: "Read a manga by your favorite author/artist",
+      8: "Read a manga by an author/artist duo",
+      9: "Read a manga by an author/artist you don't know",
+      10: "Read a manga by an author/artist you don't like",
+      11: "Read the first or earliest work of your favorite creator",
+      12: "Read a manga from a mangaka that shares your birthday month",
+      13: "Read a manga that started publishing before or in the 70s",
+      14: "Read a manga that started publishing in the 80s",
+      15: "Read a manga that started publishing in the 90s",
+      16: "Read a manga that started publishing in the 2000s",
+      17: "Read a manga that started publishing in the 2010s",
+      18: "Read a manga that started publishing in the 2020s",
+      19: "Read a manga that started publishing in the year you joined MAL",
+      20: "Read a manga based on an anime",
+      21: "Read a manga based on a novel/light novel/web novel",
+      22: "Read a manga that's been the source of one of your completed anime",
+      23: "Read a manga that is scored higher than its anime adaptation",
+      24: "Read a manga that has been adapted to live action",
+      25: "Read a manga that has not been adapted in any way",
+      26: "Read a manga that has at least 2 anime seasons",
+      27: "Read a manga ranked in the top 1000",
+      28: "Read a manga that is not ranked",
+      29: "Read a manga with a score of 8 or above",
+      30: "Read a manga with a score of 6 or lower",
+      31: "Read a manga with more users listed in PTR than Completed",
+      32: "Read a manga from a magazine with more than 250 titles in the database",
+      33: "Read a manga from a magazine with less than 50 titles in the database",
+      34: "Read a manga that is 1-3 volumes in length",
+      35: "Read a manga that is 10+ volumes in length",
+      36: "Read a manga with 25 chapters or less",
+      37: "Read a manga with 200 chapters or more",
+      38: "Read a manga ranked ABOVE 2,000",
+      39: "Read a manga ranked BELOW 10,000",
+      40: "Read a manga with more than 10,000 completed members",
+      41: "Read a manga with less than 100 completed members",
+      42: "Read a manga with more than 30,000 total members",
+      43: "Read a manga with less than 2,000 total members",
+      44: "Read a manga with more than 500 favorites",
+      45: "Read a manga with less than 50 favorites",
+      46: "Read a manga by an author/artist who has published 5 manga or less",
+      47: "Read a manga by an author/artist who has published 10 manga or more",
+      48: "Read a josei manga",
+      49: "Read a shoujo manga",
+      50: "Read a shounen manga",
+      51: "Read a seinen manga",
+      52: "Read a manga where the main character is the gender opposite to the demographic",
+      53: "Read a manga with a target demographic that does not apply to you",
+      54: "Read a manga with a target demographic that can apply to you",
+      55: "Read a Drama or Romance manga",
+      56: "Read a Fantasy or Mystery manga",
+      57: "Read a BL or GL manga",
+      58: "Read a Comedy manga",
+      59: "Read a Slice of Life manga",
+      60: "Read a Food or Gourmet manga",
+      61: "Read a Gender Bender manga",
+      62: "Read a Horror or Supernatural manga",
+      63: "Read a Sports or Games manga",
+      64: "Read an Action or Adventure manga",
+      65: "Read a Super Power, Demon, or Vampire manga",
+      66: "Read a Martial Arts, Historical, or Samurai manga",
+      67: "Read a Mecha, Detective, or Military manga",
+      68: "Read a Psychological or Suspense manga",
+      69: "Read a Sci-Fi or Space manga",
+      70: "Read a School manga",
+      71: "Read a Childcare manga",
+      72: "Read a Memoir or Biography/Autobiography manga",
+      73: "Read a Delinquents manga",
+      74: "Read a manga tagged with one of the explicit genres (Ecchi, Erotica, Hentai)",
+      75: "Read a manga that combines a tag that you like AND one that you dislike",
+      76: "Read a manga tagged with your least favorite genre(s)",
+      77: "Read a manga with five or more genres",
+      78: "Read a manga with only one genre",
+      79: "Read a battle royale or survival manga",
+      80: "Read a CGDCT or Iyashikei manga",
+      81: "Read a Magical Girl or Magical Boy manga",
+      82: "Read a manga about a family",
+      83: "Read a manga about Music or Art",
+      84: "Read a manga about nature",
+      85: "Read a manga featuring a deity",
+      86: "Read a manga featuring mythology or folklore",
+      87: "Read a manga including time travel",
+      88: "Read a manga tagged under European Ambience",
+      89: "Read a manga tagged with Dystopia, Apocalypse, or Post-Apocalyptic",
+      90: "Read a manga that takes place in feudal Japan",
+      91: "Read a manga that takes place in the countryside",
+      92: "Read a manga tagged under Atypical Art Style, Elaborate Art Style, Sketchy Art Style, or Realistic Art Style",
+      93: "Read an isekai manga",
+      94: "Read a manga with a Strong Female Lead",
+      95: "Read a manga about zombies",
+      96: "Read a manga with LGBT Themes",
+      97: "Read a Medical or Illness manga",
+      98: "Read a manga featuring Magic or Wizards",
+      99: "Read a manga featuring Curses",
+      100: "Read a manga focused on revenge",
+      101: "Read an award-winning manga",
+      102: "Read a manga with a listed cast of 8 or more people",
+      103: "Read a manga with a main cast of 18+ year-olds",
+      104: "Read a manga with an older main character",
+      105: "Read a manga with a main character that is a professional in their field",
+      106: "Read a manga with a main character that wears glasses",
+      107: "Read a manga about characters with animal characteristics",
+      108: "Read a manga with an animal main character",
+      109: "Read a manga with an antihero or villain main character",
+      110: "Read a manga with both a child and an adult main character",
+      111: "Read a manga with both a human and a non-human main character",
+      112: "Read a manga that includes a character with a disability",
+      113: "Read a manga with an all male main cast",
+      114: "Read a manga with an all female main cast",
+      115: "Read a manga with the same number of male and female main characters",
+      116: "Read a manga with more listed supporting characters than main characters",
+      117: "Read a manga another MRC participant rated 9 or higher",
+      118: "Read a manga another MRC participant rated 4 or lower",
+      119: "Read a manga that an active MRC staff member has rated 9 or higher",
+      120: "Read a manga that is on one of the active MRC staff's Plan to Read list",
+      121: "Read a manga recommended by any MRC staff",
+      122: "Read a manga recommended to you by another participant in the discussion thread",
+      123: "Read an active MAL staff member's listed favorite manga",
+      124: "Read a manga recommended to another manga you've read for this challenge",
+      125: "Read any manga recommended to your Favorite Manga listed in profile",
+      126: "Read a manga that appears when putting in your username",
+      127: "Read a manga that started publishing on the day you joined MAL",
+      128: "Read a manga that started publishing in the month you joined MAL",
+      129: "Read a favorite from one of your MAL friends - so they finally stop telling you to do it",
+      130: "Read a manga featured in an interest stack",
+      131: "Read a manga with plants on the cover",
+      132: "Read a manga with an animal on the cover",
+      133: "Read a manga with a vehicle on the cover",
+      134: "Read a manga with weather conditions on the cover",
+      135: "Read a manga with no characters on the cover",
+      136: "Read a manga with the same first and last letter",
+      137: "Read a manga used in one of this year's MRC badges",
+      138: "Read a manga used in one of the MRC badges of any year",
+      139: "Read a manga suggested by MAL or by Anime+",
+      140: "Read a manga whose title begins with the last letter of your username",
+      141: "Read a manga with the same number of volumes as letters in your username",
+      142: "Read a manga with 6 or more words in its title",
+      143: "Read a manga with a one word title",
+      144: "Read a manga with a symbol in the title",
+      145: "Read a featured manga",
+      146: "Read a manga from the ones listed under manga relations in the Hidden Gems of Manga club",
+      147: "Read a manga that was recently reviewed",
+      148: "Read a manga series you can finish in one day",
+      149: "Read a manga that got cancelled/axed",
+      150: "Read a manga with no reviews",
+      151: "Re-read a manga",
+      152: "Read a manga with a number in the title",
+      153: "Read a manga with a Japanese honorific in the title",
+      154: "Read a manga that takes place outside of Japan, but in the real world",
+      155: "Read a manga that has been adapted to a game",
+      156: "Read a manga based on a game",
+      157: "Read a manga based on a one-shot",
+      158: "Read a manga that is related to something you previously read",
+      159: "Read an ongoing manga",
+      160: "Read a manga with a weapon on the cover",
+      161: "Read a manga with an element in the title",
+      162: "Read a manga with blood on the cover"
+};
+
+
     function generateGrids() {
       const gridCount = parseInt(document.getElementById('gridCount').value);
       if (isNaN(gridCount) || gridCount < 1 || gridCount > 5) {
@@ -49,15 +225,16 @@
       }
 
       const totalNumbersNeeded = gridCount * 16;
-      if (totalNumbersNeeded > 122) {
-        alert('Cannot generate grids without overlapping numbers.');
+      const challengeNumbers = Object.keys(challenges).map(Number);
+
+      if (totalNumbersNeeded > challengeNumbers.length) {
+        alert('Not enough challenges available to generate unique grids.');
         return;
       }
 
-      // Generate unique random numbers
-      const allNumbers = Array.from({ length: 122 }, (_, i) => i + 1);
-      allNumbers.sort(() => Math.random() - 0.5); // Shuffle
-      const selectedNumbers = allNumbers.slice(0, totalNumbersNeeded);
+      // Shuffle and pick unique numbers
+      challengeNumbers.sort(() => Math.random() - 0.5);
+      const selectedNumbers = challengeNumbers.slice(0, totalNumbersNeeded);
 
       const gridsContainer = document.getElementById('gridsContainer');
       gridsContainer.innerHTML = ''; // Clear previous grids
@@ -70,12 +247,59 @@
         gridNumbers.forEach(num => {
           const cell = document.createElement('div');
           cell.className = 'cell';
-          cell.textContent = num;
+          cell.textContent = challenges[num] || `Challenge ${num}`;
           grid.appendChild(cell);
         });
 
         gridsContainer.appendChild(grid);
       }
+    }
+
+    function downloadGridsAsImage() {
+      const canvas = document.getElementById('gridCanvas');
+      const ctx = canvas.getContext('2d');
+      const grids = document.querySelectorAll('.grid');
+
+      if (grids.length === 0) {
+        alert('No grids to download. Please generate grids first.');
+        return;
+      }
+
+      const gridSize = 150;
+      const cellHeight = 100;
+      const gap = 5;
+      const rowsPerGrid = 4;
+      const colsPerGrid = 4;
+
+      canvas.width = colsPerGrid * (gridSize + gap) * grids.length;
+      canvas.height = rowsPerGrid * (cellHeight + gap);
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      grids.forEach((grid, gridIndex) => {
+        const cells = grid.querySelectorAll('.cell');
+        cells.forEach((cell, cellIndex) => {
+          const x = gridIndex * (colsPerGrid * (gridSize + gap)) + (cellIndex % colsPerGrid) * (gridSize + gap);
+          const y = Math.floor(cellIndex / colsPerGrid) * (cellHeight + gap);
+
+          ctx.fillStyle = '#f9f9f9';
+          ctx.fillRect(x, y, gridSize, cellHeight);
+
+          ctx.strokeStyle = '#ccc';
+          ctx.strokeRect(x, y, gridSize, cellHeight);
+
+          ctx.fillStyle = '#000';
+          ctx.font = 'bold 14px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(cell.textContent, x + gridSize / 2, y + cellHeight / 2);
+        });
+      });
+
+      const link = document.createElement('a');
+      link.download = 'grids.png';
+      link.href = canvas.toDataURL();
+      link.click();
     }
   </script>
 </body>
